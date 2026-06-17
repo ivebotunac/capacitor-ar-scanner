@@ -160,3 +160,6 @@ android/*.iml
 
 # Generated API docs json
 docs.json
+
+# npm auth (never commit tokens)
+.npmrc
