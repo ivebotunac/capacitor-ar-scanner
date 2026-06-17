@@ -141,3 +141,22 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ---- Capacitor plugin native build artefacts ----
+# iOS / Swift
+.build/
+.swiftpm/
+Pods/
+build/
+DerivedData/
+
+# Android
+android/build/
+android/.gradle/
+android/.idea/
+android/captures/
+android/local.properties
+android/*.iml
+
+# Generated API docs json
+docs.json
