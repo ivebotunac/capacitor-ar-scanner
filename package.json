@@ -1,6 +1,6 @@
 {
   "name": "capacitor-ar-scanner",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "description": "Capacitor plugin for AR/LiDAR camera preview, 3D scanning and real-world volume/dimension measurement using ARKit (iOS) and ARCore (Android), built for AI/ML capture pipelines.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",

@@ -311,7 +311,9 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         return resized?.jpegData(compressionQuality: quality)?.base64EncodedString()
     }
 
-    /// Returns (highRes 1536px for AI, thumbnail 512px for storage)
+    /// Returns (highRes 1280px for AI, thumbnail 1024px for storage).
+    /// High-res is capped at 1280px because the analysis backend downscales to 1280 anyway;
+    /// uploading more only slows down and destabilizes the request on poor networks.
     private func captureFrameDualBase64(frame: ARFrame) -> (highRes: String?, thumbnail: String?) {
         let pixelBuffer = frame.capturedImage
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
@@ -320,7 +322,7 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         // ARKit camera buffer is always in landscape-right (native sensor orientation).
         // Apply .right so the image displays correctly in portrait mode.
         let uiImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-        let highRes = resizeImage(uiImage, maxDimension: 1536, quality: 0.85)
+        let highRes = resizeImage(uiImage, maxDimension: 1280, quality: 0.8)
         let thumbnail = resizeImage(uiImage, maxDimension: 1024, quality: 0.8)
         return (highRes, thumbnail)
     }

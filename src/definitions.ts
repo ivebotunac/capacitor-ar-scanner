@@ -15,6 +15,10 @@ export interface ARScannerPlugin {
    * On iOS the preview is an `ARSCNView` inserted below the WebView; the WebView
    * is kept transparent so your UI composites on top of the live camera.
    *
+   * On Android the returned promise resolves only once the CameraX use cases are
+   * actually bound (since 8.0.1), so a resolved promise means `capture()` is safe
+   * to call. It rejects if the camera fails to bind or permission is denied.
+   *
    * @since 8.0.0
    */
   startPreview(options?: PreviewOptions): Promise<{ started: boolean }>;
@@ -190,7 +194,7 @@ export interface ScanResult {
   measureMethod?: 'lidar';
 
   /**
-   * High-resolution (1536px) JPEG, base64-encoded, intended for AI/ML analysis.
+   * High-resolution (1280px) JPEG, base64-encoded, intended for AI/ML analysis.
    * Not persisted by the plugin.
    *
    * @since 8.0.0

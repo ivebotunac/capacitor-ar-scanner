@@ -129,6 +129,10 @@ Start the native AR camera preview rendered behind a transparent WebView.
 On iOS the preview is an `ARSCNView` inserted below the WebView; the WebView
 is kept transparent so your UI composites on top of the live camera.
 
+On Android the returned promise resolves only once the CameraX use cases are
+actually bound (since 8.0.1), so a resolved promise means `capture()` is safe
+to call. It rejects if the camera fails to bind or permission is denied.
+
 | Param         | Type                                                      |
 | ------------- | --------------------------------------------------------- |
 | **`options`** | <code><a href="#previewoptions">PreviewOptions</a></code> |
@@ -261,7 +265,7 @@ Remove all listeners registered by this plugin.
 | **`scanMode`**            | <code>'single' \| 'multi-angle'</code>                  | Whether this was a single capture or a multi-angle scan.                                                 | 8.0.0 |
 | **`cameraAngle`**         | <code>number</code>                                     | Angle of the camera relative to the measured surface, in degrees.                                        | 8.0.0 |
 | **`measureMethod`**       | <code>'lidar'</code>                                    | The measurement method used.                                                                             | 8.0.0 |
-| **`capturedImageBase64`** | <code>string</code>                                     | High-resolution (1536px) JPEG, base64-encoded, intended for AI/ML analysis. Not persisted by the plugin. | 8.0.0 |
+| **`capturedImageBase64`** | <code>string</code>                                     | High-resolution (1280px) JPEG, base64-encoded, intended for AI/ML analysis. Not persisted by the plugin. | 8.0.0 |
 | **`thumbnailBase64`**     | <code>string</code>                                     | Thumbnail (1024px) JPEG, base64-encoded, intended for display/storage.                                   | 8.0.0 |
 
 

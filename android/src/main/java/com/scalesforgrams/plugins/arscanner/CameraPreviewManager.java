@@ -39,6 +39,11 @@ public class CameraPreviewManager {
         void onError(String message);
     }
 
+    public interface StartCallback {
+        void onStarted();
+        void onError(String message);
+    }
+
     private ProcessCameraProvider cameraProvider;
     private Camera camera;
     private ImageCapture imageCapture;
@@ -51,8 +56,11 @@ public class CameraPreviewManager {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    public void start(WebView webView, LifecycleOwner lifecycleOwner) {
-        if (isRunning) return;
+    public void start(WebView webView, LifecycleOwner lifecycleOwner, StartCallback callback) {
+        if (isRunning) {
+            if (callback != null) callback.onStarted();
+            return;
+        }
 
         Context context = webView.getContext();
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -74,7 +82,9 @@ public class CameraPreviewManager {
         // Make WebView transparent
         webView.setBackgroundColor(Color.TRANSPARENT);
 
-        // Start CameraX
+        // Start CameraX. Completion is reported through the callback so the JS bridge only
+        // resolves startPreview once the camera is actually bound — resolving early opened a
+        // 1-3s window on slow devices where capture() failed with "Preview is not running".
         var cameraProviderFuture = ProcessCameraProvider.getInstance(context);
         cameraProviderFuture.addListener(() -> {
             try {
@@ -94,10 +104,29 @@ public class CameraPreviewManager {
                 camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageCapture);
 
                 isRunning = true;
+                if (callback != null) callback.onStarted();
             } catch (Exception e) {
                 e.printStackTrace();
+                cleanupViews(webView);
+                if (callback != null) {
+                    callback.onError(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                }
             }
         }, ContextCompat.getMainExecutor(context));
+    }
+
+    /** Remove the PreviewView and restore the WebView background after a failed bind. */
+    private void cleanupViews(WebView webView) {
+        if (previewView != null) {
+            ViewGroup parent = (ViewGroup) previewView.getParent();
+            if (parent != null) {
+                parent.removeView(previewView);
+            }
+            previewView = null;
+        }
+        if (webView != null) {
+            webView.setBackgroundColor(Color.BLACK);
+        }
     }
 
     public void stop(WebView webView) {
@@ -109,18 +138,8 @@ public class CameraPreviewManager {
             cameraProvider = null;
         }
 
-        if (previewView != null) {
-            ViewGroup parent = (ViewGroup) previewView.getParent();
-            if (parent != null) {
-                parent.removeView(previewView);
-            }
-            previewView = null;
-        }
-
-        // Restore WebView background to black (avoid white flash)
-        if (webView != null) {
-            webView.setBackgroundColor(Color.BLACK);
-        }
+        // Removes PreviewView and restores WebView background to black (avoid white flash)
+        cleanupViews(webView);
 
         camera = null;
         imageCapture = null;
@@ -158,8 +177,10 @@ public class CameraPreviewManager {
                             return;
                         }
 
-                        // Generate high-res (1536px) and thumbnail (1024px)
-                        String highRes = resizeThenEncode(bitmap, 1536, 85);
+                        // High-res capped at 1280px: the analysis backend downscales to 1280
+                        // anyway (Gemini tiling cost), so uploading more only slows down and
+                        // destabilizes the request on poor networks.
+                        String highRes = resizeThenEncode(bitmap, 1280, 80);
                         String thumbnail = resizeThenEncode(bitmap, 1024, 80);
                         bitmap.recycle();
 

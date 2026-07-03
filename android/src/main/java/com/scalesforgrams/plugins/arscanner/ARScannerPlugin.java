@@ -61,15 +61,38 @@ public class ARScannerPlugin extends Plugin {
                 }
 
                 previewManager = new CameraPreviewManager();
-                previewManager.start(webView, lifecycleOwner);
+                // Resolve only when CameraX is actually bound: resolving early made the JS
+                // side mark the preview as running 1-3s before it really was, and every
+                // capture() in that window failed with "Preview is not running".
+                previewManager.start(webView, lifecycleOwner, new CameraPreviewManager.StartCallback() {
+                    @Override
+                    public void onStarted() {
+                        JSObject result = new JSObject();
+                        result.put("started", true);
+                        call.resolve(result);
+                    }
 
-                JSObject result = new JSObject();
-                result.put("started", true);
-                call.resolve(result);
+                    @Override
+                    public void onError(String message) {
+                        notifyScanError("Failed to start camera: " + message);
+                        call.reject("Failed to start camera: " + message);
+                    }
+                });
             } catch (Exception e) {
                 call.reject("Failed to start preview: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Mirror of the iOS scanEvent error contract so the web layer's capture issue
+     * tracking works on Android too (previously Android emitted no scanEvents at all).
+     */
+    private void notifyScanError(String message) {
+        JSObject event = new JSObject();
+        event.put("type", "error");
+        event.put("message", message);
+        notifyListeners("scanEvent", event);
     }
 
     @PluginMethod
@@ -102,6 +125,7 @@ public class ARScannerPlugin extends Plugin {
 
                 @Override
                 public void onError(String message) {
+                    notifyScanError(message);
                     call.reject(message);
                 }
             }
