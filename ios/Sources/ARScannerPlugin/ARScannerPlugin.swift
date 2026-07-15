@@ -1,3 +1,4 @@
+import AVFoundation
 import Capacitor
 import UIKit
 
@@ -42,6 +43,24 @@ public class ARScannerPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - startPreview (camera behind WebView)
 
     @objc public func startPreview(_ call: CAPPluginCall) {
+        // Gate on camera permission BEFORE running the AR session
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            doStartPreview(call)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                if granted {
+                    self?.doStartPreview(call)
+                } else {
+                    call.reject("Camera permission denied")
+                }
+            }
+        default: // .denied, .restricted
+            call.reject("Camera permission denied")
+        }
+    }
+
+    private func doStartPreview(_ call: CAPPluginCall) {
         let forceLidarOff = call.getBool("forceLidarOff") ?? false
 
         DispatchQueue.main.async { [weak self] in

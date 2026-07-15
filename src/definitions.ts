@@ -19,6 +19,11 @@ export interface ARScannerPlugin {
    * actually bound (since 8.0.1), so a resolved promise means `capture()` is safe
    * to call. It rejects if the camera fails to bind or permission is denied.
    *
+   * On iOS the camera permission is requested (first call) and checked before the
+   * AR session starts (since 8.0.2); like Android, the promise rejects with
+   * "Camera permission denied" when access is denied or restricted, instead of
+   * resolving into a silently black preview.
+   *
    * @since 8.0.0
    */
   startPreview(options?: PreviewOptions): Promise<{ started: boolean }>;
