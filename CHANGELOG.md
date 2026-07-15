@@ -1,5 +1,15 @@
 # Changelog
 
+## 8.0.3 (2026-07-15)
+
+### Fixed
+
+- **iOS: white screen behind the first-run camera permission alert.** The 8.0.2
+  permission gate defers the AR session until the user answers, but by then the
+  web layer is typically already transparent — exposing the WKWebView's default
+  opaque white. `startPreview()` now paints a black backdrop before showing the
+  system prompt (restored on deny).
+
 ## 8.0.2 (2026-07-15)
 
 ### Reliability

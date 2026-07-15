@@ -48,16 +48,40 @@ public class ARScannerPlugin: CAPPlugin, CAPBridgedPlugin {
         case .authorized:
             doStartPreview(call)
         case .notDetermined:
+            // While the system permission alert is up, the web layer has typically
+            // already gone transparent expecting a camera behind it — but nothing
+            // has painted the webview yet, so its default opaque white shows
+            // through. Paint a black backdrop first; deny restores it.
+            DispatchQueue.main.async { [weak self] in
+                self?.paintBlackBackdrop()
+            }
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 if granted {
                     self?.doStartPreview(call)
                 } else {
+                    DispatchQueue.main.async { self?.restoreOpaqueBackdrop() }
                     call.reject("Camera permission denied")
                 }
             }
         default: // .denied, .restricted
             call.reject("Camera permission denied")
         }
+    }
+
+    private func paintBlackBackdrop() {
+        guard let webView = self.webView else { return }
+        webView.isOpaque = false
+        webView.backgroundColor = .black
+        webView.scrollView.backgroundColor = .black
+    }
+
+    private func restoreOpaqueBackdrop() {
+        guard let webView = self.webView else { return }
+        // Black, not white, mirroring CameraPreviewManager.stop(): the caller is
+        // about to repaint its own background and black avoids a white flash.
+        webView.isOpaque = true
+        webView.backgroundColor = .black
+        webView.scrollView.backgroundColor = .black
     }
 
     private func doStartPreview(_ call: CAPPluginCall) {
