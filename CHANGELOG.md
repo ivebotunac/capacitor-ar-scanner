@@ -1,5 +1,16 @@
 # Changelog
 
+## 8.0.2 (2026-07-15)
+
+### Reliability
+
+- **iOS: `startPreview()` now requests and checks camera permission before running
+  the AR session, mirroring the Android contract.** Previously a denied or restricted
+  camera permission still resolved the call: the AR session failed silently and the
+  preview stayed black with no way for the web layer to know why. The promise now
+  rejects with "Camera permission denied" (same message as Android), and the
+  permission prompt still appears on the first preview for undetermined status.
+
 ## 8.0.1 (2026-07-03)
 
 ### Reliability
