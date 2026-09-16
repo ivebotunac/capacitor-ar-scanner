@@ -258,20 +258,21 @@ Remove all listeners registered by this plugin.
 
 #### ScanResult
 
-| Prop                      | Type                                                    | Description                                                                                              | Since |
-| ------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----- |
-| **`hasLidar`**            | <code>boolean</code>                                    | Whether the measurement used LiDAR depth (`true`) or was image-only (`false`).                           | 8.0.0 |
-| **`width`**               | <code>number</code>                                     | Object width in centimeters.                                                                             | 8.0.0 |
-| **`height`**              | <code>number</code>                                     | Object height in centimeters.                                                                            | 8.0.0 |
-| **`depth`**               | <code>number</code>                                     | Object depth in centimeters.                                                                             | 8.0.0 |
-| **`volume`**              | <code>number</code>                                     | Object volume in cubic centimeters (oriented bounding box, W × H × D).                                   | 8.0.0 |
-| **`depthQuality`**        | <code>'high' \| 'medium' \| 'low' \| 'estimated'</code> | Quality of the depth data used for this measurement.                                                     | 8.0.0 |
-| **`pointCount`**          | <code>number</code>                                     | Number of depth points used in the measurement.                                                          | 8.0.0 |
-| **`scanMode`**            | <code>'single' \| 'multi-angle'</code>                  | Whether this was a single capture or a multi-angle scan.                                                 | 8.0.0 |
-| **`cameraAngle`**         | <code>number</code>                                     | Angle of the camera relative to the measured surface, in degrees.                                        | 8.0.0 |
-| **`measureMethod`**       | <code>'lidar'</code>                                    | The measurement method used.                                                                             | 8.0.0 |
-| **`capturedImageBase64`** | <code>string</code>                                     | High-resolution (1280px) JPEG, base64-encoded, intended for AI/ML analysis. Not persisted by the plugin. | 8.0.0 |
-| **`thumbnailBase64`**     | <code>string</code>                                     | Thumbnail (1024px) JPEG, base64-encoded, intended for display/storage.                                   | 8.0.0 |
+| Prop                      | Type                                                          | Description                                                                                                                                            | Since |
+| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| **`hasLidar`**            | <code>boolean</code>                                          | Whether the measurement used LiDAR depth (`true`) or was image-only (`false`).                                                                         | 8.0.0 |
+| **`width`**               | <code>number</code>                                           | Object width in centimeters.                                                                                                                           | 8.0.0 |
+| **`height`**              | <code>number</code>                                           | Object height in centimeters.                                                                                                                          | 8.0.0 |
+| **`depth`**               | <code>number</code>                                           | Object depth in centimeters.                                                                                                                           | 8.0.0 |
+| **`volume`**              | <code>number</code>                                           | Object volume in cubic centimeters (oriented bounding box, W × H × D).                                                                                 | 8.0.0 |
+| **`depthQuality`**        | <code>'high' \| 'medium' \| 'low' \| 'estimated'</code>       | Quality of the depth data used for this measurement.                                                                                                   | 8.0.0 |
+| **`pointCount`**          | <code>number</code>                                           | Number of depth points used in the measurement.                                                                                                        | 8.0.0 |
+| **`scanMode`**            | <code>'single' \| 'multi-angle'</code>                        | Whether this was a single capture or a multi-angle scan.                                                                                               | 8.0.0 |
+| **`cameraAngle`**         | <code>number</code>                                           | Angle of the camera relative to the measured surface, in degrees.                                                                                      | 8.0.0 |
+| **`measureMethod`**       | <code>'lidar'</code>                                          | The measurement method used.                                                                                                                           | 8.0.0 |
+| **`capturedImageBase64`** | <code>string</code>                                           | High-resolution (1280px) JPEG, base64-encoded, intended for AI/ML analysis. Not persisted by the plugin.                                               | 8.0.0 |
+| **`thumbnailBase64`**     | <code>string</code>                                           | Thumbnail (1024px) JPEG, base64-encoded, intended for display/storage.                                                                                 | 8.0.0 |
+| **`lidarFallbackCode`**   | <code><a href="#captureissuecode">CaptureIssueCode</a></code> | iOS: set when the LiDAR measurement failed and the capture fell back to the photo alone (`hasLidar: false`, zero dimensions). Carries the reason code. | 8.0.4 |
 
 
 #### TorchOptions

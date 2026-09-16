@@ -212,6 +212,14 @@ export interface ScanResult {
    * @since 8.0.0
    */
   thumbnailBase64?: string;
+
+  /**
+   * iOS: set when the LiDAR measurement failed and the capture fell back to the
+   * photo alone (`hasLidar: false`, zero dimensions). Carries the reason code.
+   *
+   * @since 8.0.4
+   */
+  lidarFallbackCode?: CaptureIssueCode;
 }
 
 /**

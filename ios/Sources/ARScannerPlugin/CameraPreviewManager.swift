@@ -339,8 +339,8 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
 
         let hasLidar = !forceLidarOff && ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
-        if !hasLidar {
-            // Match Android behavior: image-only, no sensor measurements. Gemini analyzes the photo without misleading plane-derived dimensions.
+        // Image-only result, same shape as Android: no sensor measurements.
+        func imageOnlyResult(fallbackCode: String?) -> [String: Any] {
             var result: [String: Any] = [
                 "hasLidar": false,
                 "width": 0,
@@ -351,10 +351,25 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
                 "pointCount": 0,
                 "measureMethod": "lidar"
             ]
+            if let code = fallbackCode { result["lidarFallbackCode"] = code }
             if let b64 = dualImages.highRes { result["capturedImageBase64"] = b64 }
             if let thumb = dualImages.thumbnail { result["thumbnailBase64"] = thumb }
+            return result
+        }
+
+        // A failed LiDAR measurement returns the photo instead of failing the capture; the error event stays for the caller when there is no photo.
+        func fallBackOrFail(type: String, data: [String: Any]) {
+            if dualImages.highRes != nil, let code = data["code"] as? String {
+                completion(imageOnlyResult(fallbackCode: code))
+            } else {
+                emitEvent(type: type, data: data)
+                completion(nil)
+            }
+        }
+
+        if !hasLidar {
             isProcessing = false
-            completion(result)
+            completion(imageOnlyResult(fallbackCode: nil))
             return
         }
 
@@ -362,11 +377,10 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         guard let query = sceneView.raycastQuery(from: screenCenter, allowing: .estimatedPlane, alignment: .any),
               let raycastResult = sceneView.session.raycast(query).first else {
             isProcessing = false
-            emitEvent(type: "error", data: [
+            fallBackOrFail(type: "error", data: [
                 "code": "NO_SURFACE",
                 "message": "Could not detect surface"
             ])
-            completion(nil)
             return
         }
 
@@ -380,11 +394,10 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
 
         guard worldVertices.count > 50 else {
             isProcessing = false
-            emitEvent(type: "error", data: [
+            fallBackOrFail(type: "error", data: [
                 "code": "NOT_ENOUGH_DEPTH",
                 "message": "Not enough depth data"
             ])
-            completion(nil)
             return
         }
 
@@ -410,22 +423,20 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
                 self?.isProcessing = false
 
                 guard let measurement = result else {
-                    self?.emitEvent(type: "error", data: [
+                    fallBackOrFail(type: "error", data: [
                         "code": "CANNOT_ISOLATE",
                         "message": "Could not isolate object"
                     ])
-                    completion(nil)
                     return
                 }
 
                 let maxAngle: Float = 12.0
                 if measurement.surfaceAngle > maxAngle {
-                    self?.emitEvent(type: "warning", data: [
+                    fallBackOrFail(type: "warning", data: [
                         "code": "HOLD_LEVEL",
                         "message": "Hold phone more level",
                         "angle": measurement.surfaceAngle
                     ])
-                    completion(nil)
                     return
                 }
 

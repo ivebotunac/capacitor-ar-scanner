@@ -1,5 +1,17 @@
 # Changelog
 
+## 8.0.4 (2026-09-16)
+
+### Fixed
+
+- **iOS: a failed LiDAR measurement no longer fails the capture.** On LiDAR devices
+  `capture()` rejected whenever the measurement step could not run (NO_SURFACE,
+  NOT_ENOUGH_DEPTH, CANNOT_ISOLATE, HOLD_LEVEL) and discarded the photo it had already
+  taken, which failed about half of all captures on Pro iPhones in the field. It now
+  resolves with that photo alone, `hasLidar: false` and zero dimensions, the same shape
+  as a non-LiDAR device or Android, and sets `lidarFallbackCode` to the reason. It still
+  rejects when no photo could be taken.
+
 ## 8.0.3 (2026-07-15)
 
 ### Fixed
