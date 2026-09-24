@@ -141,7 +141,7 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         return false
     }
 
-    func capture(completion: @escaping ([String: Any]?) -> Void) {
+    func capture(detectBarcodes: Bool = false, completion: @escaping ([String: Any]?) -> Void) {
         guard isRunning, !isProcessing else {
             completion(nil)
             return
@@ -152,7 +152,24 @@ class CameraPreviewManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { completion(nil); return }
-            self.captureLiDAR(completion: completion)
+            guard detectBarcodes else {
+                self.captureLiDAR(completion: completion)
+                return
+            }
+            // Barcodes are read after the photo, so every other field is exactly what capture() gives without the option.
+            let photoFrame = self.sceneView?.session.currentFrame?.capturedImage
+            self.captureLiDAR { result in
+                guard var result = result, let session = self.sceneView?.session else {
+                    completion(result)
+                    return
+                }
+                self.isProcessing = true
+                BarcodeReader.read(photoFrame: photoFrame, session: session) { barcodes in
+                    self.isProcessing = false
+                    result["barcodes"] = barcodes
+                    completion(result)
+                }
+            }
         }
     }
 

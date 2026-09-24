@@ -128,7 +128,7 @@ public class ARScannerPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        manager.capture { result in
+        manager.capture(detectBarcodes: call.getBool("detectBarcodes") ?? false) { result in
             if let result = result {
                 call.resolve(result)
             } else {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.1.0 (2026-09-24)
+
+### Added
+
+- **`capture({ detectBarcodes: true })` reads retail barcodes on the device.** EAN-13,
+  EAN-8 and UPC-E come back in `barcodes`, each with its digits, format and box as
+  fractions of the upright photo. iOS reads them with Apple Vision from
+  the photo's own frame, since the phone may move after the tap, then from a
+  high-resolution still (iOS 16+); Android reads them with ML Kit
+  from the full-resolution photo before it shrinks to 1280px. UPC-A comes back as a
+  13-digit EAN-13 on both. The option is off by default, and without it `capture()`
+  behaves exactly as in 8.0.4. Android now bundles ML Kit barcode scanning, about 2.4 MB.
+
 ## 8.0.4 (2026-09-16)
 
 ### Fixed

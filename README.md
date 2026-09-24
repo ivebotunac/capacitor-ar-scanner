@@ -90,7 +90,7 @@ await handle.remove();
 * [`checkSupport()`](#checksupport)
 * [`startPreview(...)`](#startpreview)
 * [`stopPreview()`](#stoppreview)
-* [`capture()`](#capture)
+* [`capture(...)`](#capture)
 * [`setTorch(...)`](#settorch)
 * [`addListener('scanEvent', ...)`](#addlistenerscanevent-)
 * [`removeAllListeners()`](#removealllisteners)
@@ -165,15 +165,19 @@ WebView to its opaque state. Safe to call when no preview is running.
 --------------------
 
 
-### capture()
+### capture(...)
 
 ```typescript
-capture() => Promise<ScanResult>
+capture(options?: CaptureOptions | undefined) => Promise<ScanResult>
 ```
 
 Capture the current frame and measure the object at the center of the
 viewfinder, returning real-world dimensions plus base64 images for any
 downstream AI/ML analysis.
+
+| Param         | Type                                                      |
+| ------------- | --------------------------------------------------------- |
+| **`options`** | <code><a href="#captureoptions">CaptureOptions</a></code> |
 
 **Returns:** <code>Promise&lt;<a href="#scanresult">ScanResult</a>&gt;</code>
 
@@ -273,6 +277,23 @@ Remove all listeners registered by this plugin.
 | **`capturedImageBase64`** | <code>string</code>                                           | High-resolution (1280px) JPEG, base64-encoded, intended for AI/ML analysis. Not persisted by the plugin.                                               | 8.0.0 |
 | **`thumbnailBase64`**     | <code>string</code>                                           | Thumbnail (1024px) JPEG, base64-encoded, intended for display/storage.                                                                                 | 8.0.0 |
 | **`lidarFallbackCode`**   | <code><a href="#captureissuecode">CaptureIssueCode</a></code> | iOS: set when the LiDAR measurement failed and the capture fell back to the photo alone (`hasLidar: false`, zero dimensions). Carries the reason code. | 8.0.4 |
+| **`barcodes`**            | <code>DetectedBarcode[]</code>                                | The retail barcodes read on the device, present only when `capture()` was called with `detectBarcodes: true`. Empty when none was found.               | 8.1.0 |
+
+
+#### DetectedBarcode
+
+| Prop         | Type                                                                       | Description                                                                  | Since |
+| ------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----- |
+| **`value`**  | <code>string</code>                                                        | The digits as encoded. UPC-A reads as a 13-digit EAN-13 with a leading zero. | 8.1.0 |
+| **`format`** | <code>'EAN13' \| 'EAN8' \| 'UPCE'</code>                                   | The symbology.                                                               | 8.1.0 |
+| **`box`**    | <code>{ left: number; top: number; right: number; bottom: number; }</code> | Where the barcode is, as fractions of the upright photo, origin top-left.    | 8.1.0 |
+
+
+#### CaptureOptions
+
+| Prop                 | Type                 | Description                                                                                                                                                                                                                                                        | Default            | Since |
+| -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
+| **`detectBarcodes`** | <code>boolean</code> | Also read EAN-13, EAN-8 and UPC-E barcodes on the device: on iOS with Apple Vision, from the photo's own frame and then a high-resolution still on iOS 16+; on Android with ML Kit, from the full-resolution photo. The photo and every other field are unchanged. | <code>false</code> | 8.1.0 |
 
 
 #### TorchOptions

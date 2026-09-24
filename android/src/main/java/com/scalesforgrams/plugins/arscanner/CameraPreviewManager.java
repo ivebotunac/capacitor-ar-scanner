@@ -6,9 +6,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.util.Base64;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import androidx.annotation.NonNull;
@@ -22,11 +24,20 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+import com.google.android.gms.tasks.Tasks;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.common.InputImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages a CameraX preview behind a transparent WebView on Android.
@@ -157,7 +168,7 @@ public class CameraPreviewManager {
         return enabled;
     }
 
-    public void capture(CaptureCallback callback) {
+    public void capture(boolean detectBarcodes, CaptureCallback callback) {
         if (!isRunning || imageCapture == null) {
             callback.onError("Camera not running");
             return;
@@ -177,6 +188,9 @@ public class CameraPreviewManager {
                             return;
                         }
 
+                        // Read on the full-resolution photo, before it shrinks to 1280px.
+                        JSArray barcodes = detectBarcodes ? readBarcodes(bitmap) : null;
+
                         // High-res capped at 1280px: the analysis backend downscales to 1280
                         // anyway (Gemini tiling cost), so uploading more only slows down and
                         // destabilizes the request on poor networks.
@@ -195,6 +209,7 @@ public class CameraPreviewManager {
                         result.put("measureMethod", "lidar");
                         if (highRes != null) result.put("capturedImageBase64", highRes);
                         if (thumbnail != null) result.put("thumbnailBase64", thumbnail);
+                        if (barcodes != null) result.put("barcodes", barcodes);
 
                         callback.onResult(result);
                     } catch (Exception e) {
@@ -208,6 +223,58 @@ public class CameraPreviewManager {
                 }
             }
         );
+    }
+
+    // ── Barcodes ──
+
+    // EAN-13, EAN-8 and UPC-E as iOS reports them; UPC-A becomes a 13-digit EAN-13 with a leading zero, as Vision gives it.
+    private JSArray readBarcodes(Bitmap bitmap) {
+        JSArray found = new JSArray();
+        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8, Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E)
+            .build();
+        BarcodeScanner scanner = BarcodeScanning.getClient(options);
+        try {
+            List<Barcode> barcodes = Tasks.await(scanner.process(InputImage.fromBitmap(bitmap, 0)), 3, TimeUnit.SECONDS);
+            float width = bitmap.getWidth();
+            float height = bitmap.getHeight();
+            for (Barcode barcode : barcodes) {
+                String value = barcode.getRawValue();
+                Rect rect = barcode.getBoundingBox();
+                String format = formatName(barcode.getFormat());
+                if (value == null || rect == null || format == null) continue;
+                JSObject box = new JSObject();
+                box.put("left", rect.left / width);
+                box.put("top", rect.top / height);
+                box.put("right", rect.right / width);
+                box.put("bottom", rect.bottom / height);
+                JSObject entry = new JSObject();
+                entry.put("value", barcode.getFormat() == Barcode.FORMAT_UPC_A ? "0" + value : value);
+                entry.put("format", format);
+                entry.put("box", box);
+                found.put(entry);
+            }
+        } catch (Exception e) {
+            // A failed read reports no barcode; the photo still goes out.
+            Log.w("ARScanner", "Barcode read failed: " + e.getMessage());
+        } finally {
+            scanner.close();
+        }
+        return found;
+    }
+
+    private static String formatName(int format) {
+        switch (format) {
+            case Barcode.FORMAT_EAN_13:
+            case Barcode.FORMAT_UPC_A:
+                return "EAN13";
+            case Barcode.FORMAT_EAN_8:
+                return "EAN8";
+            case Barcode.FORMAT_UPC_E:
+                return "UPCE";
+            default:
+                return null;
+        }
     }
 
     // ── Image helpers ──

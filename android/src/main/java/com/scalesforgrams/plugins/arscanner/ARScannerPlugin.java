@@ -117,6 +117,7 @@ public class ARScannerPlugin extends Plugin {
         }
 
         previewManager.capture(
+            call.getBoolean("detectBarcodes", false),
             new CameraPreviewManager.CaptureCallback() {
                 @Override
                 public void onResult(JSObject result) {

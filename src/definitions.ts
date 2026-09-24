@@ -43,7 +43,7 @@ export interface ARScannerPlugin {
    *
    * @since 8.0.0
    */
-  capture(): Promise<ScanResult>;
+  capture(options?: CaptureOptions): Promise<ScanResult>;
 
   /**
    * Toggle the device torch (flashlight) while the preview is running.
@@ -220,6 +220,50 @@ export interface ScanResult {
    * @since 8.0.4
    */
   lidarFallbackCode?: CaptureIssueCode;
+
+  /**
+   * The retail barcodes read on the device, present only when `capture()`
+   * was called with `detectBarcodes: true`. Empty when none was found.
+   *
+   * @since 8.1.0
+   */
+  barcodes?: DetectedBarcode[];
+}
+
+export interface CaptureOptions {
+  /**
+   * Also read EAN-13, EAN-8 and UPC-E barcodes on the device: on iOS with Apple Vision,
+   * from the photo's own frame and then a high-resolution still on iOS 16+; on Android
+   * with ML Kit, from the full-resolution photo.
+   * The photo and every other field are unchanged.
+   *
+   * @default false
+   * @since 8.1.0
+   */
+  detectBarcodes?: boolean;
+}
+
+export interface DetectedBarcode {
+  /**
+   * The digits as encoded. UPC-A reads as a 13-digit EAN-13 with a leading zero.
+   *
+   * @since 8.1.0
+   */
+  value: string;
+
+  /**
+   * The symbology.
+   *
+   * @since 8.1.0
+   */
+  format: 'EAN13' | 'EAN8' | 'UPCE';
+
+  /**
+   * Where the barcode is, as fractions of the upright photo, origin top-left.
+   *
+   * @since 8.1.0
+   */
+  box: { left: number; top: number; right: number; bottom: number };
 }
 
 /**
